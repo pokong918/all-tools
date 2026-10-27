@@ -1,0 +1,13 @@
+{
+  "id": "floppybird",
+  "name": "Floppy Bird",
+  "description": "A Flappy Bird clone built with HTML/JS/CSS.",
+  "descriptionZh": "像素鸟（Flappy Bird）网页复刻版，纯静态零依赖。",
+  "repo": "https://github.com/nebez/floppybird",
+  "category": "生活实用",
+  "tags": ["免安装", "游戏"],
+  "stars": 7000,
+  "type": "web-static",
+  "start": "#static",
+  "openUrl": "/"
+}

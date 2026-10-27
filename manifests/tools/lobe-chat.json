@@ -1,0 +1,17 @@
+{
+  "id": "lobe-chat",
+  "name": "Lobe Chat",
+  "description": "Modern design AI chat framework with plugins and multi-model support.",
+  "descriptionZh": "设计精美的 AI 聊天框架，支持插件与多模型（体积较大，首次安装较慢）。",
+  "repo": "https://github.com/lobehub/lobe-chat",
+  "category": "AI 与大模型",
+  "tags": ["需 Node", "AI 对话", "重型"],
+  "stars": 45000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run dev -- -p {port}",
+  "port": { "default": 3010, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 300000 },
+  "openUrl": "/",
+  "notes": "Next.js 项目，依赖体积大；脚本名以实测校准。"
+}

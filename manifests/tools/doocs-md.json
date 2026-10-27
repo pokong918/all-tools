@@ -1,0 +1,17 @@
+{
+  "id": "doocs-md",
+  "name": "微信 Markdown 编辑器",
+  "description": "Markdown editor for WeChat official accounts, with rich themes.",
+  "descriptionZh": "专为微信公众号排版设计的 Markdown 编辑器，多主题一键转换。",
+  "repo": "https://github.com/doocs/md",
+  "category": "文档与办公",
+  "tags": ["需 Node", "中文界面", "Markdown"],
+  "stars": 10000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run dev -- --port {port}",
+  "port": { "default": 5173, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 120000 },
+  "openUrl": "/",
+  "notes": "vite 项目；脚本名以实测校准。"
+}

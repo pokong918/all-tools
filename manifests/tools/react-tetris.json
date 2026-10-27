@@ -1,0 +1,17 @@
+{
+  "id": "react-tetris",
+  "name": "React Tetris",
+  "description": "A stunning tetris game built with React and immutable data.",
+  "descriptionZh": "用 React 实现的高颜值俄罗斯方块，支持键盘与触屏操作。",
+  "repo": "https://github.com/chvin/react-tetris",
+  "category": "生活实用",
+  "tags": ["需 Node", "游戏", "中文界面"],
+  "stars": 22000,
+  "type": "web-node",
+  "runtime": { "node": ">=16" },
+  "start": "npm start",
+  "port": { "default": 3000, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 180000 },
+  "openUrl": "/",
+  "notes": "react-scripts 项目，识别 PORT 环境变量；脚本名以实测校准。"
+}

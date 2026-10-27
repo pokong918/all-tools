@@ -1,0 +1,17 @@
+{
+  "id": "excalidraw",
+  "name": "Excalidraw",
+  "description": "Virtual whiteboard for sketching hand-drawn like diagrams.",
+  "descriptionZh": "手绘风格白板：流程图、架构图、草图，界面简洁上手即会。",
+  "repo": "https://github.com/excalidraw/excalidraw",
+  "category": "图像与设计",
+  "tags": ["需 Node", "画板", "图表"],
+  "stars": 90000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run start -- --port {port}",
+  "port": { "default": 3000, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 120000 },
+  "openUrl": "/",
+  "notes": "vite 项目；脚本名以实测校准。"
+}

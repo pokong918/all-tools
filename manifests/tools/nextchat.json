@@ -1,0 +1,17 @@
+{
+  "id": "nextchat",
+  "name": "NextChat",
+  "description": "Lightweight and fast AI chat assistant, supporting multiple providers.",
+  "descriptionZh": "轻量跨平台 AI 对话客户端（ChatGPT/多模型），配好 Key 即用。",
+  "repo": "https://github.com/ChatGPTNextWeb/NextChat",
+  "category": "AI 与大模型",
+  "tags": ["需 Node", "AI 对话"],
+  "stars": 80000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run dev -- -p {port}",
+  "port": { "default": 3000, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 180000 },
+  "openUrl": "/",
+  "notes": "Next.js 项目；无 API Key 也可打开界面。脚本名以实测校准。"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "jsoncrack",
+  "name": "JSON Crack",
+  "description": "Seamlessly visualize your JSON data instantly into graphs.",
+  "descriptionZh": "JSON 可视化：把 JSON 数据一键变成可交互的关系图/树图。",
+  "repo": "https://github.com/AykutSarac/jsoncrack",
+  "category": "开发工具",
+  "tags": ["需 Node", "JSON"],
+  "stars": 33000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run dev -- -p {port}",
+  "port": { "default": 3000, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 180000 },
+  "openUrl": "/",
+  "notes": "Next.js 项目；脚本名以实测校准。"
+}

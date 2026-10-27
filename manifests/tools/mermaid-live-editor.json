@@ -1,0 +1,17 @@
+{
+  "id": "mermaid-live-editor",
+  "name": "Mermaid Live Editor",
+  "description": "Edit, preview and share Mermaid diagrams and flowcharts in your browser.",
+  "descriptionZh": "Mermaid 图表在线编辑器：文本转流程图/时序图/甘特图，实时预览。",
+  "repo": "https://github.com/mermaid-js/mermaid-live-editor",
+  "category": "文档与办公",
+  "tags": ["需 Node", "图表", "中文界面"],
+  "stars": 3000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run dev -- --port {port}",
+  "port": { "default": 5173, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 120000 },
+  "openUrl": "/",
+  "notes": "vite 项目；脚本名以实测校准。"
+}

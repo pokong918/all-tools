@@ -1,0 +1,17 @@
+{
+  "id": "drawdb",
+  "name": "drawDB",
+  "description": "Free, simple, and intuitive online database diagram editor and SQL generator.",
+  "descriptionZh": "在线数据库 ER 图编辑器，拖拽建表、一键导出 SQL。",
+  "repo": "https://github.com/drawdb-io/drawdb",
+  "category": "开发工具",
+  "tags": ["需 Node", "数据库", "中文界面"],
+  "stars": 26000,
+  "type": "web-node",
+  "runtime": { "node": ">=18" },
+  "start": "npm run dev -- --port {port}",
+  "port": { "default": 5173, "env": "PORT" },
+  "healthCheck": { "path": "/", "timeoutMs": 120000 },
+  "openUrl": "/",
+  "notes": "vite 项目；脚本名以实测校准。"
+}

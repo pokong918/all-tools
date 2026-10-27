@@ -1,0 +1,13 @@
+{
+  "id": "2048",
+  "name": "2048",
+  "description": "The source code for 2048 - a simple and addictive puzzle game.",
+  "descriptionZh": "经典数字滑块拼图游戏 2048 的原始开源实现，零依赖秒开。",
+  "repo": "https://github.com/gabrielecirulli/2048",
+  "category": "生活实用",
+  "tags": ["免安装", "游戏"],
+  "stars": 12000,
+  "type": "web-static",
+  "start": "#static",
+  "openUrl": "/"
+}
