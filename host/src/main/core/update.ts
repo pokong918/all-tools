@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import type { ToolManifest, ToolState } from '../../common/types'
-import { downloadTool } from './downloader'
+import { downloadReleaseAsset, downloadTool } from './downloader'
 import { getInstalled, upsertInstalled } from './store'
 import { installPhase, log, stop } from './lifecycle'
 import { broadcast } from './events'
@@ -46,8 +46,11 @@ export async function updateTool(manifest: ToolManifest): Promise<{ updated: boo
       log(id, `[更新] ${out.trim().split('\n')[0] ?? ''}`)
     } else {
       fs.rmSync(inst.dir, { recursive: true, force: true })
-      const { dir, source } = await downloadTool(id, manifest.repo, (l) => log(id, l))
-      upsertInstalled({ ...getInstalled(id)!, dir, source })
+      const dl =
+        manifest.type === 'desktop'
+          ? await downloadReleaseAsset(id, manifest.repo, (l) => log(id, l))
+          : await downloadTool(id, manifest.repo, (l) => log(id, l))
+      upsertInstalled({ ...getInstalled(id)!, dir: dl.dir, source: dl.source })
       updated = true
       message = '已重新下载最新版本'
     }

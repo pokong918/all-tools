@@ -10,7 +10,7 @@ files:
   - out/**
   - "!**/*.map"
 
-# 内置资源：官方 Manifest 库 + Node sidecar（FR-DIST-08）
+# 内置资源：官方 Manifest 库 + Node sidecar（FR-DIST-08）+ 托盘图标
 extraResources:
   - from: ../manifests
     to: manifests
@@ -20,6 +20,10 @@ extraResources:
     to: runtimes
     filter:
       - "**/*"
+  - from: ./build
+    to: build
+    filter:
+      - "icon-32.png"
 
 asar: true
 
@@ -27,6 +31,7 @@ electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 
 win:
+  icon: build/icon.ico
   target:
     - nsis
     - portable

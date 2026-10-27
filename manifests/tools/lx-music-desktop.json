@@ -1,0 +1,14 @@
+{
+  "id": "lx-music-desktop",
+  "name": "LX Music",
+  "description": "A music player based on Electron, simple and beautiful.",
+  "descriptionZh": "洛雪音乐助手：基于 Electron 的音乐播放器，界面简洁。",
+  "repo": "https://github.com/lyswhut/lx-music-desktop",
+  "category": "生活实用",
+  "tags": ["桌面程序", "音乐", "中文界面"],
+  "stars": 42000,
+  "type": "desktop",
+  "start": "#desktop",
+  "openUrl": "/",
+  "notes": "获取时自动下载最新 Release 的 Windows 版本，以独立窗口运行。"
+}

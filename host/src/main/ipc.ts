@@ -1,8 +1,8 @@
 import { app, dialog, ipcMain, shell, BrowserWindow } from 'electron'
-import type { CatalogEntry, CatalogView, Prefs, ToolManifest, ToolState, WizardStatus } from '../common/types'
+import type { CatalogEntry, CatalogView, ManifestOverride, Prefs, ToolManifest, ToolState, WizardStatus } from '../common/types'
 import { ensureManifests, loadManifests } from './core/catalog'
 import { envInfo } from './core/env'
-import { getCatalogCache, getInstalledAll, getPrefs, savePrefs, touchRecent } from './core/store'
+import { getCatalogCache, getInstalledAll, getPrefs, loadOverrides, resetOverride, savePrefs, saveOverride, touchRecent } from './core/store'
 import { acquire, acquireEntry, getLogs, reinstall, remove, start, stop } from './core/lifecycle'
 import { collectCatalog } from './core/collector'
 import { updateTool } from './core/update'
@@ -54,6 +54,17 @@ export function registerIpc(): void {
   ipcMain.handle('tool:update', (_e, manifest: ToolManifest) => updateTool(manifest))
   ipcMain.handle('tool:reinstall', (_e, manifest: ToolManifest) => reinstall(manifest))
   ipcMain.handle('tool:logs', (_e, id: string) => getLogs(id))
+
+  // Manifest 本地覆盖（可视化编辑）
+  ipcMain.handle('tool:save-override', (_e, patch: ManifestOverride) => {
+    saveOverride(patch)
+    return loadManifests().find((m) => m.id === patch.id) ?? null
+  })
+  ipcMain.handle('tool:reset-override', (_e, id: string) => {
+    resetOverride(id)
+    return loadManifests().find((m) => m.id === id) ?? null
+  })
+  ipcMain.handle('tool:overrides', () => loadOverrides())
 
   ipcMain.handle('term:open', (_e, id: string) => {
     openTerminal(id)
@@ -124,8 +135,47 @@ export function registerIpc(): void {
     return r && r.length ? r[0] : null
   })
 
-  // ---- Manifest 远程同步与宿主更新 ----
+  // Manifest 远程同步与宿主更新 ----
 
   ipcMain.handle('manifests:sync', () => syncManifests())
   ipcMain.handle('app:check-update', () => checkHostUpdate())
+
+  // ---- 数据迁移与备份 ----
+
+  ipcMain.handle('data:migrate', async (_e, target: string) => {
+    const { migrateDataRoot } = await import('./core/migrate')
+    return migrateDataRoot(target)
+  })
+
+  ipcMain.handle('backup:export', async (e) => {
+    const { buildBackup } = await import('./core/backup')
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const file = win
+      ? dialog.showSaveDialogSync(win, {
+          title: '导出备份',
+          defaultPath: `all-tools-backup-${new Date().toISOString().slice(0, 10)}.json`,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        })
+      : undefined
+    if (!file) return null
+    const { writeFileSync } = await import('node:fs')
+    writeFileSync(file, JSON.stringify(buildBackup(), null, 2), 'utf8')
+    return file
+  })
+
+  ipcMain.handle('backup:import', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const r = win
+      ? dialog.showOpenDialogSync(win, {
+          title: '导入备份',
+          filters: [{ name: 'JSON', extensions: ['json'] }],
+          properties: ['openFile']
+        })
+      : undefined
+    if (!r || !r.length) return null
+    const { readFileSync } = await import('node:fs')
+    const { applyBackup } = await import('./core/backup')
+    const data = JSON.parse(readFileSync(r[0], 'utf8'))
+    return applyBackup(data)
+  })
 }

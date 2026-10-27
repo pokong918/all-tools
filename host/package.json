@@ -1,6 +1,6 @@
 {
   "name": "all-tools-host",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "All-Tools 本地工具集线器宿主",
   "main": "./out/main/index.js",
   "author": "all-tools",
@@ -11,8 +11,9 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json",
     "fetch-node": "node scripts/fetch-node.mjs",
-    "dist": "npm run fetch-node && npm run build && electron-builder",
-    "dist:dir": "npm run fetch-node && npm run build && electron-builder --dir"
+    "gen-icon": "node scripts/gen-icon.mjs",
+    "dist": "npm run gen-icon && npm run fetch-node && npm run build && electron-builder",
+    "dist:dir": "npm run gen-icon && npm run fetch-node && npm run build && electron-builder --dir"
   },
   "dependencies": {
     "adm-zip": "^0.5.16"

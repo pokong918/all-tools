@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, nativeImage, shell } from 'electron'
 import { join } from 'node:path'
 import { paths } from './core/paths'
 import { ensureManifests, loadManifests } from './core/catalog'
@@ -6,6 +6,17 @@ import { registerIpc } from './ipc'
 import { getRunningIds, initLifecycle, stopAll } from './core/lifecycle'
 import { addBroadcastHook } from './core/events'
 import { rebuildTrayMenu, setupTray } from './core/tray'
+
+/** 开发态窗口图标（安装态自动使用 exe 图标） */
+function devWindowIcon() {
+  if (app.isPackaged) return undefined
+  const file = join(__dirname, '../../build/icon.ico')
+  try {
+    return nativeImage.createFromPath(file)
+  } catch {
+    return undefined
+  }
+}
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -16,6 +27,7 @@ function createWindow(): void {
     title: 'All-Tools',
     autoHideMenuBar: true,
     backgroundColor: '#0f1117',
+    icon: devWindowIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

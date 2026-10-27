@@ -65,7 +65,7 @@ The build auto-downloads a Node 20 sidecar (npmmirror) and bundles the official 
 
 - [x] M1 — host shell, manifests, web-node/web-static runners, lifecycle & process management
 - [x] M2 — GitHub catalog sync, auto-adaptation, python/docker/cli runners, updates, storage dashboard, packaging (NSIS/portable), first-run wizard, remote manifest sync
-- [ ] M3 — app icon, manifest visual editor, multi-tab usage, data-directory migration, export/import, desktop-tool runner
+- [x] M3 — app icon, manifest visual editor (local overrides), multi-tab usage, data-directory migration, export/import backup, desktop-tool runner
 - [ ] M4 — macOS/Linux, community manifest contributions, shared dependency cache
 
 ## 🤝 Contributing
@@ -145,7 +145,7 @@ npm run dist:dir   # 仅产出目录版（最快验证）
 
 - [x] M1 — 宿主壳、Manifest 规范、web-node/web-static 运行器、生命周期与进程管理
 - [x] M2 — GitHub 目录同步、自动适配、python/docker/cli 运行器、工具更新、磁盘看板、打包分发（NSIS/便携版）、首次启动向导、清单远程同步
-- [ ] M3 — 应用图标、Manifest 可视化编辑、多标签使用、数据目录迁移、导出/导入、桌面程序运行器
+- [x] M3 — 应用图标、Manifest 可视化编辑（本地覆盖）、多标签使用、数据目录迁移、导出/导入备份、桌面程序运行器
 - [ ] M4 — macOS/Linux、社区清单共建、共享依赖缓存
 
 ## 🤝 参与贡献

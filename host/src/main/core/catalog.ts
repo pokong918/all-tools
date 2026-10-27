@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { paths } from './paths'
-import { loadAutoManifests } from './store'
-import type { ToolManifest } from '../../common/types'
+import { loadAutoManifests, loadOverrides } from './store'
+import type { ManifestOverride, ToolManifest } from '../../common/types'
 
 const REQUIRED_FIELDS: (keyof ToolManifest)[] = ['id', 'name', 'description', 'repo', 'category', 'type', 'start', 'openUrl']
 
@@ -39,14 +39,29 @@ function loadFromDir(dir: string, origin: 'preset' | 'auto'): ToolManifest[] {
   return list
 }
 
+function applyOverride(m: ToolManifest, o: ManifestOverride | undefined): ToolManifest {
+  if (!o) return m
+  return {
+    ...m,
+    ...(o.start !== undefined && { start: o.start }),
+    ...(o.port !== undefined && { port: { ...m.port, ...o.port } }),
+    ...(o.openUrl !== undefined && { openUrl: o.openUrl }),
+    ...(o.healthCheck !== undefined && { healthCheck: { ...m.healthCheck, ...o.healthCheck } }),
+    ...(o.notes !== undefined && { notes: o.notes })
+  }
+}
+
 /**
- * 全部 Manifest = 官方预置（manifests/tools/）+ 自动适配生成（data/auto-manifests/）。
- * 每份清单即唯一事实源，按 star 降序。
+ * 全部 Manifest = 官方预置（manifests/tools/）+ 自动适配生成（data/auto-manifests/）
+ * + 本地覆盖（data/manifest-overrides/，可视化编辑产物）。每份清单即唯一事实源，按 star 降序。
  */
 export function loadManifests(): ToolManifest[] {
   const preset = loadFromDir(path.join(paths.manifestsDir, 'tools'), 'preset')
   const auto = loadAutoManifests().map((m) => ({ ...m, origin: 'auto' as const }))
-  return [...preset, ...auto].sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0))
+  const overrides = loadOverrides()
+  return [...preset, ...auto]
+    .map((m) => applyOverride(m, overrides[m.id]))
+    .sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0))
 }
 
 /** 安装态首次启动：从安装包资源拷贝内置清单（M2 打包时配置 extraResources） */

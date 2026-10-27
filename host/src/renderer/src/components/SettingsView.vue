@@ -58,16 +58,42 @@ async function checkUpdate(): Promise<void> {
 }
 
 async function changeDataDir(): Promise<void> {
-  if (!confirm('更改数据目录？新目录将在重启应用后生效；已下载的工具不会自动迁移。')) return
+  if (
+    !confirm(
+      '迁移数据目录？将停止所有运行中的工具，并把 tools/、data/ 复制到新目录（数据量较大时耗时较长）。完成后需重启应用。'
+    )
+  )
+    return
   changingDir.value = true
   try {
     const dir = await api.chooseDirectory()
     if (!dir) return
-    await api.completeWizard({ dataRoot: dir, syncNow: false })
+    const r = await api.migrateDataRoot(dir)
     wizard.value = await api.wizardStatus()
-    alert(`已设置数据目录：${dir}\n请重启应用后生效。已获取的工具目录仍在原位置，可在新目录重建或手动迁移。`)
+    alert(`迁移完成（已复制：${r.moved.join('、') || '无'}）。\n请重启应用后生效。`)
+  } catch (e) {
+    alert(`迁移失败：${(e as Error).message}`)
   } finally {
     changingDir.value = false
+  }
+}
+
+async function doExport(): Promise<void> {
+  try {
+    const file = await api.backupExport()
+    if (file) alert(`备份已导出：\n${file}`)
+  } catch (e) {
+    alert(`导出失败：${(e as Error).message}`)
+  }
+}
+
+async function doImport(): Promise<void> {
+  if (!confirm('导入备份？将覆盖收藏/最近使用/适配覆盖/目录缓存（不影响已下载的工具）。导入后建议重启应用。')) return
+  try {
+    const r = await api.backupImport()
+    if (r) alert(`导入完成，已恢复：${r.restored.join('、')}`)
+  } catch (e) {
+    alert(`导入失败：${(e as Error).message}`)
   }
 }
 
@@ -122,7 +148,22 @@ function fmtGb(bytes: number): string {
     <div v-if="wizard?.isPackaged" class="settings-block">
       <h3>数据目录</h3>
       <p class="settings-tip">当前：{{ wizard.currentRoot }}</p>
-      <button class="btn" :disabled="changingDir" @click="changeDataDir">更改数据目录…</button>
+      <div class="wizard-row">
+        <button class="btn" :disabled="changingDir" @click="changeDataDir">
+          {{ changingDir ? '迁移中…' : '迁移数据目录…' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <h3>备份与恢复</h3>
+      <p class="settings-tip">
+        备份包含：收藏、最近使用、GitHub Token、适配覆盖、目录缓存。已下载的工具本体不含在内（换机后需重新获取）。
+      </p>
+      <div class="wizard-row">
+        <button class="btn" @click="doExport">导出备份…</button>
+        <button class="btn" @click="doImport">导入备份…</button>
+      </div>
     </div>
 
     <div v-if="wizard" class="settings-block">

@@ -42,7 +42,7 @@ export interface InstalledTool {
   id: string
   dir: string
   installedAt: string
-  source: 'git' | 'zip'
+  source: 'git' | 'zip' | 'release'
   commitOrBranch?: string
   state: ToolState
   port?: number
@@ -115,6 +115,16 @@ export interface HostUpdateInfo {
   hasUpdate: boolean
   releaseUrl?: string
   message?: string
+}
+
+/** Manifest 本地覆盖（可视化编辑，浅合并到官方/自动清单之上） */
+export interface ManifestOverride {
+  id: string
+  start?: string
+  port?: { default?: number; env?: string }
+  openUrl?: string
+  healthCheck?: { path?: string; timeoutMs?: number }
+  notes?: string
 }
 
 export interface EnvInfo {

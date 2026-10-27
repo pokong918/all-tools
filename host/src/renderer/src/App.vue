@@ -7,10 +7,18 @@ import UseView from './components/UseView.vue'
 import StorageView from './components/StorageView.vue'
 import SettingsView from './components/SettingsView.vue'
 import Wizard from './components/Wizard.vue'
+import ManifestEditor from './components/ManifestEditor.vue'
 import { api } from './api'
 import type { CatalogEntry, EnvInfo, ToolListItem, ToolManifest } from '../../common/types'
 
 type View = 'my' | 'catalog' | 'favorites' | 'storage' | 'settings'
+
+interface Tab {
+  id: string
+  name: string
+  openUrl: string
+  terminal: boolean
+}
 
 const view = ref<View>('catalog')
 const wizard = ref(false)
@@ -21,10 +29,12 @@ const search = ref('')
 const activeCategory = ref('')
 const favorites = ref<string[]>([])
 const recentIds = ref<string[]>([])
-const useTarget = ref<{ id: string; name: string; openUrl: string; terminal: boolean } | null>(null)
+const tabs = ref<Tab[]>([])
+const activeTabId = ref('')
 const busy = ref('')
 const syncing = ref(false)
 const syncMsg = ref('')
+const editing = ref<ToolManifest | null>(null)
 
 async function refresh(): Promise<void> {
   const r = await api.catalog()
@@ -99,6 +109,8 @@ const shownCommunity = computed(() => {
   return list.filter((c) => matchSearch([c.name, c.description, c.repo, ...c.topics].join(' '))).slice(0, 60)
 })
 
+const inUseMode = computed(() => tabs.value.length > 0)
+
 async function onAcquire(m: ToolManifest): Promise<void> {
   busy.value = m.id
   try {
@@ -123,15 +135,31 @@ async function onAcquireEntry(e: CatalogEntry): Promise<void> {
   }
 }
 
+/** 打开工具：已有标签则激活，否则启动并新开标签 */
 async function openTool(m: ToolManifest): Promise<void> {
+  const existing = tabs.value.find((t) => t.id === m.id)
+  if (existing) {
+    activeTabId.value = m.id
+    return
+  }
   busy.value = m.id
   try {
     const r = await api.start(m)
-    useTarget.value = { id: m.id, name: m.name, openUrl: r.openUrl, terminal: m.type === 'cli' }
+    tabs.value.push({ id: m.id, name: m.name, openUrl: r.openUrl, terminal: m.type === 'cli' })
+    activeTabId.value = m.id
   } catch (e) {
-    alert(`启动失败：${(e as Error).message}`)
+    alert(`启动失败：${(e as Error).message}\n可尝试卡片上的「调整」按钮修改适配参数。`)
   } finally {
     busy.value = ''
+  }
+}
+
+function closeTab(id: string): void {
+  const idx = tabs.value.findIndex((t) => t.id === id)
+  if (idx < 0) return
+  tabs.value.splice(idx, 1)
+  if (activeTabId.value === id) {
+    activeTabId.value = tabs.value[Math.max(0, idx - 1)]?.id ?? ''
   }
 }
 
@@ -157,6 +185,7 @@ async function onStop(id: string): Promise<void> {
 async function onRemove(id: string): Promise<void> {
   if (!confirm('确认移除该工具？其本地目录（含依赖与本地数据）将被删除。')) return
   busy.value = id
+  closeTab(id)
   try {
     await api.remove(id)
   } finally {
@@ -190,11 +219,21 @@ async function openRecent(id: string): Promise<void> {
   const it = tools.value.find((t) => t.manifest.id === id)
   if (it) await openTool(it.manifest)
 }
+
+function onEditorClose(updated: ToolManifest | null): void {
+  editing.value = null
+  if (updated) {
+    const it = tools.value.find((t) => t.manifest.id === updated.id)
+    if (it) it.manifest = updated
+    syncMsg.value = `${updated.name}：适配参数已保存，重新打开工具后生效`
+  }
+}
 </script>
 
 <template>
   <div class="app">
     <Wizard v-if="wizard" @done="wizard = false" />
+    <ManifestEditor v-if="editing" :manifest="editing" @close="onEditorClose" />
     <Sidebar
       :view="view"
       :env="env"
@@ -204,7 +243,32 @@ async function openRecent(id: string): Promise<void> {
       @open-recent="openRecent"
     />
     <main class="main">
-      <UseView v-if="useTarget" :tool="useTarget" @back="useTarget = null" @stopped="refresh" />
+      <template v-if="inUseMode">
+        <div class="tabbar">
+          <div class="tabs-scroll">
+            <button
+              v-for="t in tabs"
+              :key="t.id"
+              class="tab"
+              :class="{ on: activeTabId === t.id }"
+              @click="activeTabId = t.id"
+            >
+              <span class="tab-name">{{ t.name }}</span>
+              <span v-if="t.terminal" class="tab-badge">终端</span>
+              <span class="tab-close" @click.stop="closeTab(t.id)">×</span>
+            </button>
+          </div>
+          <button class="btn back-shelf" @click="tabs = []; activeTabId = ''">返回工具架</button>
+        </div>
+        <UseView
+          v-for="t in tabs"
+          v-show="activeTabId === t.id"
+          :key="t.id"
+          :tool="t"
+          @back="closeTab(t.id)"
+          @stopped="refresh"
+        />
+      </template>
       <SettingsView v-else-if="view === 'settings'" />
       <StorageView v-else-if="view === 'storage'" />
       <template v-else>
@@ -241,6 +305,7 @@ async function openRecent(id: string): Promise<void> {
             @stop="onStop(it.manifest.id)"
             @remove="onRemove(it.manifest.id)"
             @update="onUpdate(it.manifest)"
+            @edit="editing = it.manifest"
             @toggle-fav="toggleFav(it.manifest.id)"
           />
           <CommunityCard

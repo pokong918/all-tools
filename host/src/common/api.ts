@@ -3,6 +3,7 @@ import type {
   CatalogView,
   EnvInfo,
   HostUpdateInfo,
+  ManifestOverride,
   ManifestSyncResult,
   Prefs,
   StorageInfo,
@@ -30,6 +31,9 @@ export interface AllToolsApi {
   stop(id: string): Promise<void>
   remove(id: string): Promise<void>
   updateTool(m: ToolManifest): Promise<{ updated: boolean; message: string }>
+  /** 保存/重置 Manifest 本地覆盖，返回合并后的最新 Manifest */
+  saveOverride(patch: ManifestOverride): Promise<ToolManifest | null>
+  resetOverride(id: string): Promise<ToolManifest | null>
   logs(id: string): Promise<string[]>
   termOpen(id: string): Promise<void>
   termWrite(id: string, data: string): Promise<void>
@@ -47,6 +51,10 @@ export interface AllToolsApi {
   syncManifests(): Promise<ManifestSyncResult>
   /** 检查宿主新版本（轻量：对比 GitHub Release tag） */
   checkHostUpdate(): Promise<HostUpdateInfo>
+  /** 数据目录迁移（停止全部工具并复制数据到新根，需重启生效） */
+  migrateDataRoot(target: string): Promise<{ moved: string[] }>
+  backupExport(): Promise<string | null>
+  backupImport(): Promise<{ restored: string[] } | null>
   onToolState(cb: (s: StateEvent) => void): () => void
   onToolLog(cb: (v: LogEvent) => void): () => void
   onProgress(cb: (v: ProgressEvent) => void): () => void

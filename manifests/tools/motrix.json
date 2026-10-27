@@ -1,0 +1,14 @@
+{
+  "id": "motrix",
+  "name": "Motrix",
+  "description": "A full-featured download manager based on aria2.",
+  "descriptionZh": "基于 aria2 的全能下载器：HTTP/BT/磁力链接，界面美观。",
+  "repo": "https://github.com/agalwood/Motrix",
+  "category": "下载与网络",
+  "tags": ["桌面程序", "下载器"],
+  "stars": 47000,
+  "type": "desktop",
+  "start": "#desktop",
+  "openUrl": "/",
+  "notes": "获取时自动下载最新 Release 的 Windows 版本，以独立窗口运行。"
+}

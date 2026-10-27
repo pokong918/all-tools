@@ -39,6 +39,49 @@ function parseGitProgress(line: string): number | undefined {
 }
 
 /**
+ * desktop 类工具下载：取最新 Release 的 Windows 资产（.zip 优先解压，否则 .exe 直放）。
+ */
+export async function downloadReleaseAsset(
+  id: string,
+  repo: string,
+  onLog: (line: string) => void
+): Promise<{ dir: string; source: 'release' }> {
+  const { owner, name } = parseRepo(repo)
+  onLog(`[下载] 查询 ${owner}/${name} 最新 Release`)
+  const res = await fetch(`https://api.github.com/repos/${owner}/${name}/releases/latest`, {
+    headers: { 'User-Agent': 'all-tools-host', Accept: 'application/vnd.github+json' }
+  })
+  if (!res.ok) throw new Error(`GitHub API HTTP ${res.status}`)
+  const rel = (await res.json()) as {
+    tag_name?: string
+    assets?: { name: string; size: number; browser_download_url: string }[]
+  }
+  const candidates = (rel.assets ?? []).filter(
+    (a) => /\.(zip|exe)$/i.test(a.name) && !/arm|mac|linux|darwin|android|uninst/i.test(a.name)
+  )
+  const asset =
+    candidates.find((a) => /win|windows/i.test(a.name) && /\.zip$/i.test(a.name)) ??
+    candidates.find((a) => /win|windows/i.test(a.name)) ??
+    candidates[0]
+  if (!asset) throw new Error('最新 Release 未找到可用的 Windows 资产（.zip/.exe）')
+
+  onLog(`[下载] ${asset.name}（${(asset.size / 1e6).toFixed(1)}MB，来自 ${rel.tag_name ?? 'latest'}）`)
+  const fileRes = await fetch(asset.browser_download_url, { redirect: 'follow' })
+  if (!fileRes.ok) throw new Error(`资产下载失败 HTTP ${fileRes.status}`)
+  const buf = Buffer.from(await fileRes.arrayBuffer())
+
+  const dir = path.join(paths.toolsDir, id)
+  fs.rmSync(dir, { recursive: true, force: true })
+  fs.mkdirSync(dir, { recursive: true })
+  if (/\.zip$/i.test(asset.name)) {
+    new AdmZip(buf).extractAllTo(dir, true)
+  } else {
+    fs.writeFileSync(path.join(dir, asset.name), buf)
+  }
+  return { dir, source: 'release' }
+}
+
+/**
  * 下载工具到 tools/<id>/（FR-DL-01/02/03）。
  * 优先 git clone --depth 1；无 git 或克隆失败回退 codeload zip 通道。
  * 失败时清理半成品目录。

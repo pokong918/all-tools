@@ -1,9 +1,12 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron'
+import { join } from 'node:path'
 import { broadcast } from './events'
 
-// 1x1 PNG（后续替换为正式图标资源）
-const ICON_PNG_1X1 =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAf8/9hAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+/** 托盘图标：安装态 resources/build/icon-32.png；开发态 host/build/icon-32.png */
+function trayIconPath(): string {
+  if (app.isPackaged) return join(process.resourcesPath ?? '', 'build', 'icon-32.png')
+  return join(__dirname, '..', '..', '..', 'build', 'icon-32.png')
+}
 
 let tray: Tray | null = null
 
@@ -13,7 +16,8 @@ export interface TrayTool {
 }
 
 export function setupTray(): void {
-  tray = new Tray(nativeImage.createFromDataURL(ICON_PNG_1X1))
+  const img = nativeImage.createFromPath(trayIconPath())
+  tray = new Tray(img.isEmpty() ? nativeImage.createEmpty() : img)
   tray.setToolTip('All-Tools')
   rebuildTrayMenu([])
 }

@@ -51,15 +51,26 @@ async function stopTool(): Promise<void> {
     <header class="usebar">
       <button class="btn" @click="emit('back')">← 返回</button>
       <strong>{{ tool.name }}</strong>
-      <span v-if="!tool.terminal" class="url">{{ tool.openUrl }}</span>
-      <span v-else class="url">内嵌终端 · 工具目录</span>
+      <span v-if="tool.terminal" class="url">内嵌终端 · 工具目录</span>
+      <span v-else-if="!tool.openUrl" class="url">桌面程序 · 独立窗口</span>
+      <span v-else class="url">{{ tool.openUrl }}</span>
       <span class="spacer" />
-      <button v-if="!tool.terminal" class="btn" @click="wv?.reload()">刷新</button>
-      <button v-if="!tool.terminal" class="btn" @click="api.openExternal(tool.openUrl)">外部打开</button>
+      <button v-if="tool.openUrl" class="btn" @click="wv?.reload()">刷新</button>
+      <button v-if="tool.openUrl" class="btn" @click="api.openExternal(tool.openUrl)">外部打开</button>
       <button class="btn danger" @click="stopTool">停止</button>
     </header>
-    <div class="usebody" :class="{ 'usebody-term': tool.terminal }">
+    <div class="usebody" :class="{ 'usebody-term': tool.terminal || !tool.openUrl }">
       <TermView v-if="tool.terminal" :tool-id="tool.id" />
+      <div v-else-if="!tool.openUrl" class="desktop-tip">
+        <template v-if="!stopped">
+          <p class="big">🖥️ 桌面程序已启动</p>
+          <p>桌面程序以独立窗口运行，无法嵌入宿主窗口；可在此停止或重新启动它。</p>
+        </template>
+        <template v-else>
+          <p class="big">桌面程序已退出</p>
+          <p>返回列表后可重新「打开」。</p>
+        </template>
+      </div>
       <template v-else>
         <webview ref="wv" :src="tool.openUrl" class="wv" />
         <p v-if="stopped" class="stopped-tip">工具已停止，可返回列表重新启动</p>

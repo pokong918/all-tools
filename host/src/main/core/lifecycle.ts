@@ -1,6 +1,7 @@
 import type { ChildProcess } from 'node:child_process'
 import type { Server } from 'node:http'
 import fs from 'node:fs'
+import path from 'node:path'
 import type { CatalogEntry, ToolManifest, ToolState } from '../../common/types'
 import {
   getInstalled,
@@ -10,8 +11,9 @@ import {
   saveInstalledAll,
   upsertInstalled
 } from './store'
-import { downloadTool } from './downloader'
+import { downloadReleaseAsset, downloadTool } from './downloader'
 import { detectAndBuildManifest, slugifyId } from './autodetect'
+import { spawn } from 'node:child_process'
 import { allocatePort, isPortFree, releasePort } from './ports'
 import { startStaticServer } from './runners/web-static'
 import { killTree, npmInstall, startNodeApp } from './runners/web-node'
@@ -109,7 +111,10 @@ export async function acquire(manifest: ToolManifest): Promise<void> {
   })
   log(id, `[宿主] 开始获取 ${manifest.repo}`)
   try {
-    const { dir, source } = await downloadTool(id, manifest.repo, (l) => log(id, l))
+    const { dir, source } =
+      manifest.type === 'desktop'
+        ? await downloadReleaseAsset(id, manifest.repo, (l) => log(id, l))
+        : await downloadTool(id, manifest.repo, (l) => log(id, l))
     upsertInstalled({ ...getInstalled(id)!, dir, source })
     setState(id, 'installing')
     await installPhase(manifest, dir, (l) => log(id, l))
@@ -156,8 +161,34 @@ export async function acquireEntry(entry: CatalogEntry): Promise<ToolManifest> {
   }
 }
 
-async function waitHealthy(id: string, port: number, manifest: ToolManifest): Promise<void> {
-  const hc = manifest.healthCheck
+/** 在工具目录（深度 2）内寻找可执行文件，排除卸载器 */
+function findExecutable(dir: string): string | null {
+  const queue: [string, number][] = [[dir, 0]]
+  while (queue.length) {
+    const [d, depth] = queue.shift()!
+    let names: string[] = []
+    try {
+      names = fs.readdirSync(d)
+    } catch {
+      continue
+    }
+    const exe = names.find((n) => n.toLowerCase().endsWith('.exe') && !/unins/i.test(n))
+    if (exe) return path.join(d, exe)
+    if (depth < 2) {
+      for (const n of names) {
+        const p = path.join(d, n)
+        try {
+          if (fs.statSync(p).isDirectory() && !n.startsWith('.')) queue.push([p, depth + 1])
+        } catch {
+          // 忽略不可访问项
+        }
+      }
+    }
+  }
+  return null
+}
+
+async function waitHealthy(id: string, port: number, manifest: ToolManifest): Promise<void> {  const hc = manifest.healthCheck
   const timeoutMs = hc?.timeoutMs ?? 60000
   const p = hc?.path ?? manifest.openUrl.replaceAll('{port}', String(port))
   const url = `http://127.0.0.1:${port}${p.startsWith('/') ? p : `/${p}`}`
@@ -199,6 +230,26 @@ export async function start(manifest: ToolManifest): Promise<{ openUrl: string; 
       openTerminal(id)
       setState(id, 'running')
       log(id, '[宿主] 已在工具目录打开终端')
+      return { openUrl: '', port: 0 }
+    }
+
+    // 桌面程序：独立窗口启动（无法嵌入宿主窗口，FR-ADP-07）
+    if (manifest.type === 'desktop') {
+      const exe = findExecutable(inst.dir)
+      if (!exe) throw new Error('工具目录中未找到可执行文件（.exe）')
+      log(id, `[宿主] 启动桌面程序：${path.basename(exe)}`)
+      const child = spawn(`"${exe}"`, { cwd: inst.dir, shell: true, windowsHide: false })
+      const rt = ensureRuntime(id)
+      rt.child = child
+      child.on('exit', (code) => {
+        if (getInstalled(id)?.state === 'running') {
+          log(id, `[宿主] 桌面程序已退出（code=${code}）`)
+          rt.child = undefined
+          rt.openUrl = undefined
+          setState(id, 'stopped')
+        }
+      })
+      setState(id, 'running', { pid: child.pid })
       return { openUrl: '', port: 0 }
     }
 

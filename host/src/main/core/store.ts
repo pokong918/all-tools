@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { paths } from './paths'
-import type { CatalogEntry, InstalledTool, Prefs, ToolManifest } from '../../common/types'
+import type { CatalogEntry, InstalledTool, ManifestOverride, Prefs, ToolManifest } from '../../common/types'
 
 function readJson<T>(file: string, fallback: T): T {
   try {
@@ -88,4 +88,26 @@ export function loadAutoManifests(): ToolManifest[] {
     }
   }
   return list
+}
+
+// ---- Manifest 本地覆盖（FR-ADP-09 可视化编辑）----
+
+const overridesDir = (): string => path.join(paths.dataDir, 'manifest-overrides')
+
+export function loadOverrides(): Record<string, ManifestOverride> {
+  return readJson<Record<string, ManifestOverride>>(path.join(overridesDir(), 'overrides.json'), {})
+}
+
+export function saveOverride(patch: ManifestOverride): void {
+  const all = loadOverrides()
+  all[patch.id] = { ...all[patch.id], ...patch }
+  fs.mkdirSync(overridesDir(), { recursive: true })
+  writeJsonAtomic(path.join(overridesDir(), 'overrides.json'), all)
+}
+
+export function resetOverride(id: string): void {
+  const all = loadOverrides()
+  delete all[id]
+  fs.mkdirSync(overridesDir(), { recursive: true })
+  writeJsonAtomic(path.join(overridesDir(), 'overrides.json'), all)
 }

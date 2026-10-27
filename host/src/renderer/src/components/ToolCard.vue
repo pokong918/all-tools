@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { ToolListItem } from '../../../common/types'
 
 const props = defineProps<{ item: ToolListItem; busy: boolean; fav: boolean }>()
-defineEmits<{ (e: 'acquire' | 'open' | 'stop' | 'remove' | 'update' | 'toggle-fav'): void }>()
+defineEmits<{ (e: 'acquire' | 'open' | 'stop' | 'remove' | 'update' | 'edit' | 'toggle-fav'): void }>()
 
 const STATE_LABEL: Record<string, string> = {
   'not-downloaded': '',
@@ -81,6 +81,14 @@ const starsText = computed(() =>
             @click="$emit('update')"
           >
             更新
+          </button>
+          <button
+            class="btn"
+            :disabled="busy || item.state === 'downloading'"
+            title="调整适配参数（启动命令/端口/健康检查）"
+            @click="$emit('edit')"
+          >
+            调整
           </button>
           <button class="btn danger" :disabled="busy || item.state === 'downloading'" @click="$emit('remove')">移除</button>
         </template>
