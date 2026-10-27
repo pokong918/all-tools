@@ -1,0 +1,11 @@
+node_modules/
+host/node_modules/
+host/out/
+host/dist/
+host/build-resources/
+dist/
+tools/
+data/
+runtimes/
+*.log
+.DS_Store

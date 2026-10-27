@@ -1,0 +1,42 @@
+appId: com.alltools.host
+productName: All-Tools
+copyright: MIT
+
+directories:
+  output: ../dist
+  buildResources: build
+
+files:
+  - out/**
+  - "!**/*.map"
+
+# 内置资源：官方 Manifest 库 + Node sidecar（FR-DIST-08）
+extraResources:
+  - from: ../manifests
+    to: manifests
+    filter:
+      - "**/*"
+  - from: ./build-resources/runtimes
+    to: runtimes
+    filter:
+      - "**/*"
+
+asar: true
+
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/
+
+win:
+  target:
+    - nsis
+    - portable
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  artifactName: All-Tools-Setup-${version}.${ext}
+
+portable:
+  artifactName: All-Tools-Portable-${version}.${ext}
