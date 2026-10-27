@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Tool Manifest Spec
+    url: https://github.com/pokong918/all-tools/blob/main/manifests/SCHEMA.md
+    about: How to write a tool adaptation manifest before opening a PR.

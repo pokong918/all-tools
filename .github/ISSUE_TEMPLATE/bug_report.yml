@@ -1,0 +1,46 @@
+name: 🐛 Bug report / 问题反馈
+description: Something is not working / 某个功能不正常
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened? / 发生了什么？
+      description: Also tell us what you expected to happen. / 请同时描述预期行为。
+      placeholder: Describe the issue… / 描述问题…
+    validations:
+      required: true
+  - type: dropdown
+    id: install-type
+    attributes:
+      label: How do you run All-Tools? / 运行方式
+      options:
+        - NSIS installer / 安装包
+        - Portable / 便携版
+        - Dev mode (npm run dev) / 开发模式
+  - type: input
+    id: version
+    attributes:
+      label: App version / 应用版本
+      placeholder: e.g. v0.3.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / 操作系统
+      placeholder: e.g. Windows 11 23H2
+    validations:
+      required: true
+  - type: textarea
+    id: tool
+    attributes:
+      label: Related tool (if any) / 涉及的工具（如有）
+      description: Tool name and its type badge (Web 应用 / Docker 服务 / 命令行 / 桌面程序…)
+      placeholder: e.g. Excalidraw（Web 应用）
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / 日志
+      description: Paste the in-app log panel output (bottom of the tool view). / 粘贴应用内日志面板输出（工具视图底部）。
+      render: shell
