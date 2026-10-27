@@ -1,6 +1,6 @@
 {
   "name": "all-tools-host",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "All-Tools 本地工具集线器宿主",
   "main": "./out/main/index.js",
   "author": "all-tools",
