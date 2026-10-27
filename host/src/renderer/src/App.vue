@@ -57,6 +57,10 @@ onMounted(async () => {
     it.port = s.port
     it.installed = s.state !== 'not-downloaded'
   })
+  // 后台同步（向导触发）同样在目录页展示进度/结果
+  api.onSyncLog((v) => {
+    syncMsg.value = v.line
+  })
   api.onFocusTool((v) => {
     const it = tools.value.find((i) => i.manifest.id === v.id)
     if (it) void openTool(it.manifest)
@@ -206,7 +210,7 @@ async function syncCatalog(): Promise<void> {
   syncMsg.value = '同步中…（使用 GitHub API，匿名配额 60 次/小时）'
   try {
     const r = await api.syncCatalog()
-    syncMsg.value = `同步完成：新增 ${r.added}，更新 ${r.updated}，共 ${r.total} 条（${r.requests} 次请求）`
+    syncMsg.value = `同步完成：新增 ${r.added}，更新 ${r.updated}，共 ${r.total} 条（${r.requests} 次请求）${r.note ? `；${r.note}` : ''}`
     await refresh()
   } catch (e) {
     syncMsg.value = `同步失败：${(e as Error).message}`

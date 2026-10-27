@@ -18,6 +18,12 @@ const QUERIES = [
   'topic:tools stars:>800'
 ]
 
+/** GitHub search API 匿名限速 10 次/分钟（带 Token 30 次/分钟），单次全量 12 个请求必须限速，否则 403 */
+const SEARCH_INTERVAL_MS_TOKEN = 2200
+const SEARCH_INTERVAL_MS_ANON = 6500
+
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+
 interface GhRepo {
   full_name: string
   name: string
@@ -82,22 +88,39 @@ export async function collectCatalog(): Promise<SyncResult> {
     'User-Agent': 'all-tools-host'
   }
   if (token) headers.Authorization = `Bearer ${token}`
+  const intervalMs = token ? SEARCH_INTERVAL_MS_TOKEN : SEARCH_INTERVAL_MS_ANON
 
   const cache = getCatalogCache()
   let requests = 0
+  let okRequests = 0
   let added = 0
   let updated = 0
+  let aborted = ''
 
   for (const q of QUERIES) {
     for (let page = 1; page <= 2; page++) {
+      if (requests > 0) await sleep(intervalMs)
       const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=100&page=${page}`
       requests++
       broadcast('sync-log', { line: `请求 ${q} 第 ${page} 页…` })
-      const res = await fetch(url, { headers })
-      if (res.status === 403 || res.status === 429) {
-        throw new Error('GitHub API 配额不足（匿名 60 次/小时）。稍后再试，或配置 GitHub Token。')
+      let res: Response
+      try {
+        res = await fetch(url, { headers, signal: AbortSignal.timeout(30000) })
+      } catch (e) {
+        aborted = `网络错误：${(e as Error).message}`
+        break
       }
-      if (!res.ok) throw new Error(`GitHub API HTTP ${res.status}`)
+      if (res.status === 403 || res.status === 429) {
+        aborted = token
+          ? 'GitHub 搜索配额受限，已保留本次已获取的部分，稍后再试。'
+          : 'GitHub 搜索配额受限（匿名 10 次/分钟），已保留已获取的部分；可在设置中配置 Token 提升配额。'
+        break
+      }
+      if (!res.ok) {
+        aborted = `GitHub API HTTP ${res.status}`
+        break
+      }
+      okRequests++
       const data = (await res.json()) as { items?: GhRepo[] }
       const items = data.items ?? []
       for (const r of items) {
@@ -125,10 +148,24 @@ export async function collectCatalog(): Promise<SyncResult> {
       }
       if (items.length < 100) break
     }
+    if (aborted) break
   }
 
+  // 中途受限也保留已拉到的部分（含全量完成），缓存只增不丢
   saveCatalogCache(cache)
-  const result: SyncResult = { added, updated, total: Object.keys(cache).length, requests }
-  broadcast('sync-log', { line: `采集完成：新增 ${added}，更新 ${updated}，总计 ${result.total}` })
+  const result: SyncResult = {
+    added,
+    updated,
+    total: Object.keys(cache).length,
+    requests,
+    ...(aborted && okRequests > 0 ? { note: aborted } : {})
+  }
+  broadcast('sync-log', {
+    line: aborted
+      ? `采集中止：${aborted}`
+      : `采集完成：新增 ${added}，更新 ${updated}，总计 ${result.total}`
+  })
+  // 一个请求都没成功（配额耗尽/断网）才视为失败，让界面明确报错
+  if (!okRequests && aborted) throw new Error(aborted)
   return result
 }

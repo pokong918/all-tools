@@ -140,6 +140,8 @@ export interface SyncResult {
   updated: number
   total: number
   requests: number
+  /** 非空 = 本次同步提前中止（限速/网络），已保留部分结果 */
+  note?: string
 }
 
 export interface StorageInfo {
