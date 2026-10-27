@@ -6,7 +6,7 @@ import { getCatalogCache, getInstalledAll, getPrefs, loadOverrides, resetOverrid
 import { acquire, acquireEntry, getLogs, reinstall, remove, start, stop } from './core/lifecycle'
 import { collectCatalog } from './core/collector'
 import { updateTool } from './core/update'
-import { clearDeps, storageOverview } from './core/disk'
+import { clearDeps, NPM_CACHE_ID, storageOverview } from './core/disk'
 import { closeTerminal, openTerminal, writeTerminal } from './core/runners/cli'
 import { listDrives } from './core/disks'
 import { paths, setDataRoot } from './core/paths'
@@ -82,6 +82,7 @@ export function registerIpc(): void {
   })
   ipcMain.handle('storage:clear-deps', async (_e, id: string) => {
     clearDeps(id)
+    if (id === NPM_CACHE_ID) return // 共享缓存清理后无需重装
     const manifest = loadManifests().find((m) => m.id === id)
     if (manifest) await reinstall(manifest)
   })

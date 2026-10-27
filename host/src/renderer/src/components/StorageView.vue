@@ -28,14 +28,18 @@ function fmt(bytes: number): string {
 const totalBytes = computed(() => list.value.reduce((s, i) => s + i.total, 0))
 const depsBytes = computed(() => list.value.reduce((s, i) => s + i.deps, 0))
 
-async function onClearDeps(id: string, name: string): Promise<void> {
-  if (!confirm(`清理「${name}」的依赖目录（node_modules/.venv 等）？清理后将自动重新安装。`)) return
-  busyId.value = id
+async function onClearDeps(s: { id: string; name: string; deps: number }): Promise<void> {
+  if (s.id === '__npm-cache') {
+    if (!confirm(`清理 npm 下载缓存（${fmt(s.deps)}）？缓存清理后无需重装，下次安装依赖将重新下载。`)) return
+  } else {
+    if (!confirm(`清理「${s.name}」的依赖目录（node_modules/.venv 等）？清理后将自动重新安装。`)) return
+  }
+  busyId.value = s.id
   try {
-    await api.clearDeps(id)
+    await api.clearDeps(s.id)
     await load()
   } catch (e) {
-    alert(`清理/重装失败：${(e as Error).message}`)
+    alert(`清理失败：${(e as Error).message}`)
   } finally {
     busyId.value = ''
   }
@@ -75,9 +79,9 @@ async function onClearDeps(id: string, name: string): Promise<void> {
               v-if="s.deps > 0"
               class="btn"
               :disabled="busyId === s.id"
-              @click="onClearDeps(s.id, s.name)"
+              @click="onClearDeps(s)"
             >
-              {{ busyId === s.id ? '处理中…' : '清理依赖' }}
+              {{ busyId === s.id ? '处理中…' : s.id === '__npm-cache' ? '清理缓存' : '清理依赖' }}
             </button>
           </td>
         </tr>

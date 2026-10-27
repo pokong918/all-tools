@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
+import { paths } from '../paths'
 
 /**
  * 内置 Node sidecar（FR-DIST-08）：
@@ -18,10 +19,19 @@ export function sidecarNodeDir(): string | null {
 }
 
 export function envWithSidecar(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const next = { ...env }
   const dir = sidecarNodeDir()
-  if (!dir) return env
-  const bin = process.platform === 'win32' ? dir : path.join(dir, 'bin')
-  return { ...env, PATH: `${bin}${path.delimiter}${env.PATH ?? ''}` }
+  if (dir) {
+    const bin = process.platform === 'win32' ? dir : path.join(dir, 'bin')
+    next.PATH = `${bin}${path.delimiter}${next.PATH ?? ''}`
+  }
+  // 统一 npm 缓存到数据目录（共享缓存，存储管理页可统计/清理）
+  try {
+    next.npm_config_cache = path.join(paths.dataDir, 'npm-cache')
+  } catch {
+    // paths 未就绪（极早期调用）
+  }
+  return next
 }
 
 /** 运行一次性 shell 命令并等待退出（输出经 onLog 流式转发） */

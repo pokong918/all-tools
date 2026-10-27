@@ -1,7 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { StorageInfo } from '../../common/types'
+import { paths } from './paths'
 import { getInstalledAll } from './store'
+import type { StorageInfo } from '../../common/types'
+
+/** 共享 npm 缓存虚拟条目 ID（storage:list 中出现，清理时不触发重装） */
+export const NPM_CACHE_ID = '__npm-cache'
 
 const DEP_DIRS = ['node_modules', '.venv', 'target', '__pycache__', '.gradle', 'vendor']
 
@@ -44,11 +48,23 @@ export function storageOverview(): StorageInfo[] {
     const total = dirSize(inst.dir)
     out.push({ id: inst.id, name: inst.id, dir: inst.dir, deps, code: total - deps, total })
   }
+  // 共享 npm 缓存（所有 web-node 工具共用，位于数据目录）
+  const npmCache = path.join(paths.dataDir, 'npm-cache')
+  if (fs.existsSync(npmCache)) {
+    const size = dirSize(npmCache)
+    if (size > 0) {
+      out.push({ id: NPM_CACHE_ID, name: 'npm 下载缓存（全部工具共享）', dir: npmCache, deps: size, code: 0, total: size })
+    }
+  }
   return out.sort((a, b) => b.total - a.total)
 }
 
-/** 清理依赖目录（配合 lifecycle.reinstall 重装） */
+/** 清理依赖目录（npm 缓存虚拟条目直接清理，不重装）；配合 lifecycle.reinstall 重装 */
 export function clearDeps(id: string): void {
+  if (id === NPM_CACHE_ID) {
+    fs.rmSync(path.join(paths.dataDir, 'npm-cache'), { recursive: true, force: true })
+    return
+  }
   const inst = getInstalledAll()[id]
   if (!inst?.dir) return
   for (const d of DEP_DIRS) {
