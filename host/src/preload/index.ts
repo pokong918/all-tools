@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AllToolsApi,
+  HostUpdateEvent,
   LogEvent,
   ProgressEvent,
   StateEvent,
@@ -40,6 +41,8 @@ const api: AllToolsApi = {
   chooseDirectory: () => ipcRenderer.invoke('dirs:choose'),
   syncManifests: () => ipcRenderer.invoke('manifests:sync'),
   checkHostUpdate: () => ipcRenderer.invoke('app:check-update'),
+  getHostUpdateStatus: () => ipcRenderer.invoke('app:update-status'),
+  applyHostUpdate: () => ipcRenderer.invoke('app:update-apply'),
   migrateDataRoot: (target) => ipcRenderer.invoke('data:migrate', target),
   backupExport: () => ipcRenderer.invoke('backup:export'),
   backupImport: () => ipcRenderer.invoke('backup:import'),
@@ -48,7 +51,8 @@ const api: AllToolsApi = {
   onProgress: (cb: (v: ProgressEvent) => void) => subscribe('acquire-progress', cb),
   onTermData: (cb: (v: TermDataEvent) => void) => subscribe('term-data', cb),
   onFocusTool: (cb: (v: { id: string }) => void) => subscribe('focus-tool', cb),
-  onSyncLog: (cb: (v: SyncLogEvent) => void) => subscribe('sync-log', cb)
+  onSyncLog: (cb: (v: SyncLogEvent) => void) => subscribe('sync-log', cb),
+  onHostUpdate: (cb: (v: HostUpdateEvent) => void) => subscribe('host-update', cb)
 }
 
 contextBridge.exposeInMainWorld('allTools', api)

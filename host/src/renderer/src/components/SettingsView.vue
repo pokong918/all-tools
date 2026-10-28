@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { api } from '../api'
-import type { HostUpdateInfo, WizardStatus } from '../../../common/types'
+import type { HostUpdateEvent, HostUpdateInfo, WizardStatus } from '../../../common/types'
 
 const token = ref('')
 const releaseRepo = ref('')
+const autoUpdate = ref(true)
 const saving = ref(false)
 const saveMsg = ref('')
 const msMsg = ref('')
@@ -13,23 +14,50 @@ const upd = ref<HostUpdateInfo | null>(null)
 const updBusy = ref(false)
 const wizard = ref<WizardStatus | null>(null)
 const changingDir = ref(false)
+let offUpdate: (() => void) | null = null
 
 onMounted(async () => {
   const p = await api.getPrefs()
   token.value = p.githubToken ?? ''
   releaseRepo.value = p.releaseRepo ?? ''
+  autoUpdate.value = p.autoUpdate !== false
   wizard.value = await api.wizardStatus()
+  upd.value = await api.getHostUpdateStatus()
+  offUpdate = api.onHostUpdate((v: HostUpdateEvent) => {
+    const base = upd.value ?? { current: '', latest: null, hasUpdate: false, silent: true }
+    upd.value = {
+      ...base,
+      phase: v.phase,
+      latest: v.version ?? base.latest,
+      progress: v.progress ?? base.progress,
+      message: v.message ?? base.message,
+      hasUpdate:
+        base.hasUpdate || !!v.version || v.phase === 'downloading' || v.phase === 'downloaded'
+    }
+  })
 })
+
+onUnmounted(() => offUpdate?.())
 
 async function save(): Promise<void> {
   saving.value = true
   try {
     const p = await api.getPrefs()
-    await api.setPrefs({ ...p, githubToken: token.value.trim() || undefined, releaseRepo: releaseRepo.value.trim() || undefined })
+    await api.setPrefs({
+      ...p,
+      githubToken: token.value.trim() || undefined,
+      releaseRepo: releaseRepo.value.trim() || undefined
+    })
     saveMsg.value = '已保存'
   } finally {
     saving.value = false
   }
+}
+
+async function toggleAutoUpdate(): Promise<void> {
+  const p = await api.getPrefs()
+  await api.setPrefs({ ...p, autoUpdate: autoUpdate.value })
+  saveMsg.value = autoUpdate.value ? '已开启自动更新' : '已关闭自动更新'
 }
 
 async function syncManifests(): Promise<void> {
@@ -48,13 +76,30 @@ async function syncManifests(): Promise<void> {
 async function checkUpdate(): Promise<void> {
   updBusy.value = true
   try {
-    upd.value = await api.checkHostUpdate()
-    if (upd.value.hasUpdate && upd.value.releaseUrl) {
-      await api.openExternal(upd.value.releaseUrl)
+    const r = await api.checkHostUpdate()
+    upd.value = { ...(upd.value ?? { latest: null, hasUpdate: false }), ...r }
+    // 仅在无静默更新通道（便携版/开发态）时引导到发布页
+    if (r.hasUpdate && !r.silent && r.releaseUrl) {
+      await api.openExternal(r.releaseUrl)
     }
   } finally {
     updBusy.value = false
   }
+}
+
+async function applyUpdate(): Promise<void> {
+  updBusy.value = true
+  try {
+    const r = await api.applyHostUpdate()
+    upd.value = { ...(upd.value ?? { latest: null, hasUpdate: false }), ...r }
+  } finally {
+    updBusy.value = false
+  }
+}
+
+async function openReleasePage(): Promise<void> {
+  const url = upd.value?.releaseUrl ?? `https://github.com/${releaseRepo.value || 'pokong918/all-tools'}/releases/latest`
+  await api.openExternal(url)
 }
 
 async function changeDataDir(): Promise<void> {
@@ -135,14 +180,37 @@ function fmtGb(bytes: number): string {
 
     <div class="settings-block">
       <h3>宿主更新</h3>
+      <label class="field check">
+        <input type="checkbox" v-model="autoUpdate" @change="toggleAutoUpdate" />
+        <span>自动更新（发现新版本自动下载，退出应用时安装；NSIS 安装版可用）</span>
+      </label>
       <div class="wizard-row">
         <button class="btn" :disabled="updBusy" @click="checkUpdate">{{ updBusy ? '检查中…' : '检查更新' }}</button>
+        <button
+          v-if="upd?.phase === 'downloaded'"
+          class="btn primary"
+          :disabled="updBusy"
+          @click="applyUpdate"
+        >
+          立即重启安装 v{{ upd?.latest }}
+        </button>
+        <button
+          v-else-if="upd?.hasUpdate && upd?.phase === 'idle' && upd?.silent"
+          class="btn primary"
+          :disabled="updBusy"
+          @click="applyUpdate"
+        >
+          下载 v{{ upd?.latest }}
+        </button>
+        <button v-else-if="upd?.hasUpdate && !upd?.silent" class="btn" @click="openReleasePage">打开发布页下载</button>
         <span v-if="upd" class="settings-msg">
           当前 v{{ upd.current }}
           <template v-if="upd.latest">｜最新 v{{ upd.latest }}</template>
-          ｜{{ upd.message }}
+          <template v-if="upd.phase === 'downloading'">｜下载中 {{ upd.progress ?? 0 }}%</template>
+          ｜{{ upd.message ?? '未知状态' }}
         </span>
       </div>
+      <p v-if="upd && !upd.silent" class="settings-tip">当前为便携版/开发模式，无法静默自更新，已改为引导到发布页下载。</p>
     </div>
 
     <div v-if="wizard?.isPackaged" class="settings-block">

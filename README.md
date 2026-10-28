@@ -15,6 +15,7 @@
 - **Run in-app** — Web tools open inside the host window (embedded webview); CLI tools open in an embedded terminal (xterm.js). Health-checked startup, automatic port allocation, process-tree cleanup on exit.
 - **Fully offline** — Everything runs locally after download. No cloud dependency.
 - **Unified management** — Start / stop / update / remove, disk usage dashboard with dependency cleanup, favorites & recent, system-tray shortcuts.
+- **Self-updating** — Silent auto-update on the NSIS install (checks GitHub Releases on startup & every 6 h, downloads in background, installs on quit; can be turned off in Settings). Portable builds fall back to a release-page link.
 - **Zero-requirement distribution** — Bundles its own Node runtime. End users need nothing installed (no Node, no Git, no Python unless a specific tool requires it).
 
 ## 🚀 Quick Start
@@ -66,7 +67,8 @@ The build auto-downloads a Node 20 sidecar (npmmirror) and bundles the official 
 - [x] M1 — host shell, manifests, web-node/web-static runners, lifecycle & process management
 - [x] M2 — GitHub catalog sync, auto-adaptation, python/docker/cli runners, updates, storage dashboard, packaging (NSIS/portable), first-run wizard, remote manifest sync
 - [x] M3 — app icon, manifest visual editor (local overrides), multi-tab usage, data-directory migration, export/import backup, desktop-tool runner
-- [ ] M4 — macOS/Linux, community manifest contributions, shared dependency cache
+- [x] M4 — shared dependency cache, cross-platform Node sidecar fetch, silent auto-update (electron-updater, v0.4.0)
+- [ ] M5 — macOS/Linux packaging & updates, community manifest contributions, deeper disk dedup (pnpm store)
 
 ## 🤝 Contributing
 
@@ -95,6 +97,7 @@ Issues and PRs are welcome — especially new tool manifests (`manifests/tools/*
 - **应用内使用** — Web 类工具在宿主窗口内嵌打开；命令行工具进入内嵌终端（xterm.js）。启动带健康检查、自动分配端口、退出清理进程树。
 - **完全离线** — 下载完成后全部本地运行，不依赖任何在线服务。
 - **统一管理** — 启动/停止/更新/移除、磁盘占用看板与依赖清理、收藏与最近使用、系统托盘快捷入口。
+- **自更新** — NSIS 安装版静默自动更新（启动后及每 6 小时检查 GitHub Releases，后台下载、退出时安装，可在设置中关闭）；便携版引导到发布页下载。
 - **零环境分发** — 安装包内置 Node 运行时，目标机器无需预装任何开发环境（Python/Docker 仅特定类型工具需要）。
 
 ## 🚀 快速开始
@@ -146,7 +149,8 @@ npm run dist:dir   # 仅产出目录版（最快验证）
 - [x] M1 — 宿主壳、Manifest 规范、web-node/web-static 运行器、生命周期与进程管理
 - [x] M2 — GitHub 目录同步、自动适配、python/docker/cli 运行器、工具更新、磁盘看板、打包分发（NSIS/便携版）、首次启动向导、清单远程同步
 - [x] M3 — 应用图标、Manifest 可视化编辑（本地覆盖）、多标签使用、数据目录迁移、导出/导入备份、桌面程序运行器
-- [ ] M4 — macOS/Linux、社区清单共建、共享依赖缓存
+- [x] M4 — 共享依赖缓存、跨平台 Node sidecar 获取、宿主静默自动更新（electron-updater，v0.4.0）
+- [ ] M5 — macOS/Linux 打包与更新、社区清单共建、更深度磁盘去重（pnpm store）
 
 ## 🤝 参与贡献
 

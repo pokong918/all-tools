@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import ToolCard from './components/ToolCard.vue'
 import CommunityCard from './components/CommunityCard.vue'
@@ -9,7 +9,7 @@ import SettingsView from './components/SettingsView.vue'
 import Wizard from './components/Wizard.vue'
 import ManifestEditor from './components/ManifestEditor.vue'
 import { api } from './api'
-import type { CatalogEntry, EnvInfo, ToolListItem, ToolManifest } from '../../common/types'
+import type { CatalogEntry, EnvInfo, HostUpdateEvent, HostUpdateInfo, ToolListItem, ToolManifest } from '../../common/types'
 
 type View = 'my' | 'catalog' | 'favorites' | 'storage' | 'settings'
 
@@ -35,6 +35,8 @@ const busy = ref('')
 const syncing = ref(false)
 const syncMsg = ref('')
 const editing = ref<ToolManifest | null>(null)
+const updInfo = ref<HostUpdateInfo | null>(null)
+let offHostUpdate: (() => void) | null = null
 
 async function refresh(): Promise<void> {
   const r = await api.catalog()
@@ -65,6 +67,32 @@ onMounted(async () => {
     const it = tools.value.find((i) => i.manifest.id === v.id)
     if (it) void openTool(it.manifest)
   })
+  // 宿主更新：后台静默检查，出现可用更新时顶栏提示（点击进设置）
+  void api.getHostUpdateStatus().then((s) => {
+    updInfo.value = s
+  })
+  offHostUpdate = api.onHostUpdate((v: HostUpdateEvent) => {
+    const base = updInfo.value ?? { current: '', latest: null, hasUpdate: false, silent: true }
+    updInfo.value = {
+      ...base,
+      phase: v.phase,
+      latest: v.version ?? base.latest,
+      progress: v.progress ?? base.progress,
+      message: v.message ?? base.message,
+      hasUpdate: base.hasUpdate || !!v.version || v.phase === 'downloading' || v.phase === 'downloaded'
+    }
+  })
+})
+
+onUnmounted(() => offHostUpdate?.())
+
+const updChip = computed(() => {
+  const u = updInfo.value
+  if (!u) return null
+  if (u.phase === 'downloading') return { text: `⟳ v${u.latest} ${u.progress ?? 0}%`, hot: false }
+  if (u.phase === 'downloaded') return { text: `新版本 v${u.latest} 已就绪，重启安装`, hot: true }
+  if (u.hasUpdate && u.latest) return { text: `新版本 v${u.latest}`, hot: false }
+  return null
 })
 
 const categories = computed(() => {
@@ -279,6 +307,9 @@ function onEditorClose(updated: ToolManifest | null): void {
         <header class="toolbar">
           <div class="toolbar-row">
             <input v-model="search" class="search" placeholder="搜索工具名称 / 用途 / 标签…" />
+            <button v-if="updChip" class="chip upd" :class="{ hot: updChip.hot }" @click="view = 'settings'">
+              {{ updChip.text }}
+            </button>
             <button class="btn" :disabled="syncing" @click="syncCatalog">
               {{ syncing ? '同步中…' : '⟳ 同步 GitHub 目录' }}
             </button>

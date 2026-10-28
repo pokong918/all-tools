@@ -87,6 +87,8 @@ export interface Prefs {
   githubToken?: string
   /** 发布仓库 owner/repo：Manifest 远程同步与宿主更新检查共用 */
   releaseRepo?: string
+  /** 宿主自动更新（发现新版自动下载、退出时安装）；缺省视为开启 */
+  autoUpdate?: boolean
   wizardDone?: boolean
 }
 
@@ -109,11 +111,28 @@ export interface ManifestSyncResult {
   total: number
 }
 
+/** 宿主更新通道状态 */
+export type HostUpdatePhase = 'idle' | 'checking' | 'downloading' | 'downloaded' | 'error'
+
 export interface HostUpdateInfo {
   current: string
   latest: string | null
   hasUpdate: boolean
   releaseUrl?: string
+  message?: string
+  /** electron-updater 生命周期阶段；API 回退模式不设 */
+  phase?: HostUpdatePhase
+  /** 下载进度 0-100（phase=downloading 时有效） */
+  progress?: number
+  /** 是否为 electron-updater 静默更新通道（NSIS 安装态） */
+  silent?: boolean
+}
+
+/** host-update 事件（主进程 → 渲染层广播） */
+export interface HostUpdateEvent {
+  phase: HostUpdatePhase
+  version?: string
+  progress?: number
   message?: string
 }
 

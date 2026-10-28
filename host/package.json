@@ -1,6 +1,6 @@
 {
   "name": "all-tools-host",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "All-Tools 本地工具集线器宿主",
   "main": "./out/main/index.js",
   "author": "all-tools",
@@ -16,7 +16,8 @@
     "dist:dir": "npm run gen-icon && npm run fetch-node && npm run build && electron-builder --dir"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16"
+    "adm-zip": "^0.5.16",
+    "electron-updater": "^6.6.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

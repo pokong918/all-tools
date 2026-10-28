@@ -11,7 +11,7 @@ import { closeTerminal, openTerminal, writeTerminal } from './core/runners/cli'
 import { listDrives } from './core/disks'
 import { paths, setDataRoot } from './core/paths'
 import { syncManifests } from './core/manifest-sync'
-import { checkHostUpdate } from './core/host-update'
+import { checkHostUpdate, applyHostUpdate, getHostUpdateInfo, syncAutoUpdatePref } from './core/host-update'
 
 export function registerIpc(): void {
   ipcMain.handle('catalog:list', (): CatalogView => {
@@ -90,6 +90,7 @@ export function registerIpc(): void {
   ipcMain.handle('prefs:get', () => getPrefs())
   ipcMain.handle('prefs:set', (_e, prefs: Prefs) => {
     savePrefs(prefs)
+    syncAutoUpdatePref()
     return getPrefs()
   })
 
@@ -140,6 +141,8 @@ export function registerIpc(): void {
 
   ipcMain.handle('manifests:sync', () => syncManifests())
   ipcMain.handle('app:check-update', () => checkHostUpdate())
+  ipcMain.handle('app:update-status', () => getHostUpdateInfo())
+  ipcMain.handle('app:update-apply', () => applyHostUpdate())
 
   // ---- 数据迁移与备份 ----
 

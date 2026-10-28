@@ -27,6 +27,12 @@ extraResources:
 
 asar: true
 
+# 发布渠道（FR-DIST-07）：electron-updater 依据此配置生成/读取 latest.yml
+publish:
+  provider: github
+  owner: pokong918
+  repo: all-tools
+
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 

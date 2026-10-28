@@ -6,6 +6,7 @@ import { registerIpc } from './ipc'
 import { getRunningIds, initLifecycle, stopAll } from './core/lifecycle'
 import { addBroadcastHook } from './core/events'
 import { rebuildTrayMenu, setupTray } from './core/tray'
+import { initHostUpdater } from './core/host-update'
 
 /** 开发态窗口图标（安装态自动使用 exe 图标） */
 function devWindowIcon() {
@@ -61,6 +62,7 @@ app.whenReady().then(() => {
   ensureManifests()
   initLifecycle()
   registerIpc()
+  initHostUpdater()
   setupTray()
   refreshTray()
   addBroadcastHook((channel) => {
